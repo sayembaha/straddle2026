@@ -1,9 +1,0 @@
-feedparser
-requests
-trafilatura>=1.6.2
-beautifulsoup4
-lxml
-python-dateutil
-pytz
-Jinja2
-PyYAML
