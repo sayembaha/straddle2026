@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      - STRADDLE_UA=${STRADDLE_UA:-Straddle/0.1 (+youremail@example.com)}
+      - SAVE_TARGET=${SAVE_TARGET:-}
+      - NOTION_TOKEN
+      - NOTION_DB_GENERIC
+      - NOTION_DB_RUMORS
+      - NOTION_DB_DEALS
+      - NOTION_DB_FILINGS
+      - NOTION_DB_DEBT
+      - NOTION_DB_COMMENTARY
+      - AIRTABLE_TOKEN
+      - AIRTABLE_BASE_ID
+      - AIRTABLE_TABLE_RUMORS
+      - AIRTABLE_TABLE_DEALS
+      - AIRTABLE_TABLE_FILINGS
+      - AIRTABLE_TABLE_DEBT
+      - AIRTABLE_TABLE_COMMENTARY
+    ports:
+      - "8000:8000"
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on: [api]
+    ports:
+      - "8080:80"

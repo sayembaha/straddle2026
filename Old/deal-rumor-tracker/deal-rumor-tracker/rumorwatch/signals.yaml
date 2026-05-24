@@ -1,0 +1,60 @@
+# Configurable signals & weights for scoring deal rumors
+signals:
+  - label: "Strategic alternatives / exploring options"
+    weight: 8
+    patterns:
+      - "(review|evaluate|explor(e|ing)) (of )?strategic alternatives"
+      - "exploring options"
+      - "considering a sale"
+      - "consider strategic options"
+
+  - label: "Retained financial adviser / bank hired"
+    weight: 10
+    patterns:
+      - "retained .* (bank|adviser|advisor)"
+      - "engaged .* (bank|adviser|advisor)"
+      - "appointed .* financial (adviser|advisor)"
+      - "hired .* (Goldman|JPMorgan|Morgan Stanley|Lazard|Rothschild|Evercore|Moelis|Centerview|Citi|Citigroup|BofA|Bank of America|Barclays|Jefferies|UBS|Credit Suisse)"
+      - "retained .* (Houlihan|Perella|Greenhill|Guggenheim|PJT|LionTree|Mizuho|RBC|Canaccord|Macquarie|Stifel|Raymond James|Cowen)"
+
+  - label: "Board resignation / director change"
+    weight: 6
+    patterns:
+      - "(resigns|resigned|steps down|retired) (from )?the board"
+      - "director(s)? (resign|resignation)"
+      - "appointed to the board"
+      - "lead independent director"
+
+  - label: "Activist / unsolicited proposal / defense"
+    weight: 9
+    patterns:
+      - "poison pill"
+      - "shareholder rights plan"
+      - "activist investor"
+      - "unsolicited proposal"
+      - "hostile (takeover|bid)"
+      - "governance changes tied to investor"
+
+  - label: "Special committee formed"
+    weight: 7
+    patterns:
+      - "special committee"
+      - "independent committee"
+
+  - label: "Unusual trading / trading halt"
+    weight: 4
+    patterns:
+      - "trading halt"
+      - "halts trading"
+      - "unusual trading activity"
+      - "volatility pause"
+
+  - label: "Job postings — M&A / Corp Dev / Strategic Finance"
+    weight: 5
+    patterns:
+      - "\bM&A\b"
+      - "Mergers & Acquisitions"
+      - "Corporate Development"
+      - "Strategic Finance"
+      - "Investment Banking"
+      - "Capital Markets"

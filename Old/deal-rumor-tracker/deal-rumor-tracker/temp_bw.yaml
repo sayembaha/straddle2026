@@ -1,0 +1,10 @@
+sources:
+  - type: rss
+    site: "Business Wire – M&A"
+    url: "https://www.businesswire.com/portal/site/home/news/subject/?vnsId=31341&rss=1"
+    tags: ["wire"]
+
+  - type: rss
+    site: "PR Newswire – M&A"
+    url: "https://www.prnewswire.com/rss/subject/fin-mergers-acquisitions.xml"
+    tags: ["wire"]

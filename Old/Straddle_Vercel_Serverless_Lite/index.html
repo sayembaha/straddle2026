@@ -1,0 +1,75 @@
+<!doctype html><html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Straddle — Serverless Lite</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,Arial;background:#f7fafc;color:#0f172a}
+.top{display:flex;gap:10px;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
+.logo{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;font-weight:700}
+.wrap{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 54px)}
+.sidebar{background:#fff;border-right:1px solid #e5e7eb;padding:12px}
+.btn{border:1px solid #e5e7eb;background:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;margin:4px 0;width:100%}
+.btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:12px}
+input{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px}
+.small{font-size:12px;color:#475569}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left}
+th{background:#f9fbff}
+</style></head><body>
+<div class="top"><div class="logo">S</div><b>Straddle</b><span class="small">serverless lite</span></div>
+<div class="wrap">
+  <div class="sidebar">
+    <div class="small" style="margin-bottom:8px">Agents</div>
+    <button class="btn" onclick="rumors()">Rumor Tracker</button>
+    <button class="btn" onclick="deals()">M&A Deals</button>
+    <button class="btn" onclick="filings()">SEC Δ</button>
+    <button class="btn" onclick="debt()">Debt Heatmap</button>
+    <button class="btn" onclick="commentary()">Commentary Δ</button>
+    <div class="card">
+      <div class="small">Inputs</div>
+      <div class="small">Ticker</div><input id="ticker" placeholder="AAPL">
+      <div class="small" style="margin-top:8px">Keywords</div><input id="keywords" placeholder="M&A, acquisition">
+      <div class="small" style="margin-top:8px">Prior URL</div><input id="prior" placeholder="https://.../prev.html">
+      <div class="small" style="margin-top:8px">Current URL</div><input id="current" placeholder="https://.../curr.html">
+      <button class="btn primary" style="margin-top:10px" onclick="runAll()">Run All</button>
+    </div>
+  </div>
+  <div id="out"></div>
+</div>
+<script>
+function out(h){ document.getElementById('out').insertAdjacentHTML('beforeend', h); }
+function clearOut(){ document.getElementById('out').innerHTML=''; }
+async function rumors(){
+  const kw=document.getElementById('keywords').value||'M&A, acquisition';
+  const r=await fetch('/api/rumors?timeframe=30&keywords='+encodeURIComponent(kw)); const d=await r.json();
+  const rows=d.map(x=>`<tr><td>${x.published||''}</td><td>${x.title||''}</td><td>${x.confidence||''}</td><td><a href="${x.link}" target="_blank">open</a></td></tr>`).join('');
+  out(`<div class="card"><b>Rumor Digest</b><div class="small">Top ${d.length} items</div><table><thead><tr><th>Date</th><th>Title</th><th>Conf</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+async function deals(){
+  const kw=document.getElementById('keywords').value||'';
+  const r=await fetch('/api/deals?timeframe=60&sector='+encodeURIComponent(kw)); const d=await r.json();
+  const rows=(d.items||[]).map(x=>`<tr><td>${x.published||''}</td><td>${x.title||''}</td><td>${x.value||''}</td><td>${x.rationale||''}</td></tr>`).join('');
+  out(`<div class="card"><b>M&A Deal Cards</b><table><thead><tr><th>Date</th><th>Title</th><th>Value</th><th>Rationale</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+async function filings(){
+  const t=document.getElementById('ticker').value||'AAPL';
+  const r=await fetch('/api/filings?ticker='+encodeURIComponent(t)+'&filing=10-Q'); const d=await r.json();
+  out(`<div class="card"><b>SEC Δ</b><div class="small">Risk: +${d["Risk Factors"]?.added_tokens||0} / -${d["Risk Factors"]?.removed_tokens||0}</div><div class="small">MD&A: +${d["MD&A"]?.added_tokens||0} / -${d["MD&A"]?.removed_tokens||0}</div></div>`);
+}
+async function debt(){
+  const t=document.getElementById('ticker').value||'AAPL';
+  const r=await fetch('/api/debt?ticker='+encodeURIComponent(t)+'&filing=10-K'); const d=await r.json();
+  const rows=(d.heatmap||[]).map(x=>`<tr><td>${x.bucket}</td><td>${x.total}</td></tr>`).join('');
+  out(`<div class="card"><b>Debt Maturity Heatmap</b><table><thead><tr><th>Bucket</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+async function commentary(){
+  const pr=document.getElementById('prior').value, cu=document.getElementById('current').value;
+  if(!pr||!cu){ alert('Provide both Prior and Current URLs'); return; }
+  const r=await fetch('/api/commentary?prior_url='+encodeURIComponent(pr)+'&current_url='+encodeURIComponent(cu)); const d=await r.json();
+  const a=(d.diffs?.added||[]).slice(0,10).join(', '), rm=(d.diffs?.removed||[]).slice(0,10).join(', '), rw=(d.diffs?.reworded||[]).slice(0,10).join(', ');
+  out(`<div class="card"><b>Commentary Δ</b><div class="small">Tone: ${d.tone}</div><div class="small"><b>Added</b> ${a}</div><div class="small"><b>Removed</b> ${rm}</div><div class="small"><b>Reworded</b> ${rw}</div></div>`);
+}
+async function runAll(){ clearOut(); await rumors(); await deals(); await filings(); }
+</script>
+</body></html>

@@ -1,0 +1,394 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DealScope AI — Web Chat Mock</title>
+  <style>
+    :root{
+      --bg:#f7fafc;          /* light background */
+      --panel:#ffffff;       /* cards/panels */
+      --text:#0f172a;        /* slate-900 */
+      --muted:#475569;       /* slate-600 */
+      --border:#e5e7eb;      /* gray-200 */
+      --blue:#2563eb;        /* primary */
+      --blue-50:#eff6ff;
+      --blue-100:#dbeafe;
+      --blue-600:#2563eb;
+      --blue-700:#1d4ed8;
+      --chip:#f1f5f9;
+      --shadow: 0 8px 30px rgba(2,6,23,0.06);
+      --radius: 14px;
+    }
+    *{box-sizing:border-box;}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      display:flex; flex-direction:column;
+    }
+    /* Top bar */
+    .topbar{
+      height:64px; display:flex; align-items:center; gap:12px; padding:0 16px;
+      background:linear-gradient(180deg,#ffffff,#f8fbff);
+      border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:40;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
+    }
+    .logo{
+      width:32px; height:32px; border-radius:10px; display:grid; place-items:center;
+      background:linear-gradient(135deg,var(--blue-600),#38bdf8); color:white; font-weight:900; box-shadow:var(--shadow);
+    }
+    .search{
+      flex:1; max-width:720px; position:relative;
+    }
+    .search input{
+      width:100%; padding:10px 12px 10px 38px; border:1px solid var(--border); background:#fff;
+      border-radius:999px; outline:none;
+    }
+    .search input:focus{ border-color: var(--blue-600); box-shadow: 0 0 0 3px var(--blue-100); }
+    .search .icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.6; }
+    .actions{ display:flex; align-items:center; gap:8px; }
+    .btn{
+      border:1px solid var(--border); background:#fff; padding:10px 12px; border-radius:12px; cursor:pointer;
+    }
+    .btn.primary{ background:var(--blue-600); color:white; border-color: transparent; }
+    .btn.ghost{ background:transparent; }
+    /* Layout */
+    .wrap{ flex:1; display:grid; grid-template-columns: 260px 1fr 0; gap:0; }
+    .sidebar{
+      border-right:1px solid var(--border); background:#fff; display:flex; flex-direction:column; min-height:0;
+    }
+    .side-head{ padding:16px; font-weight:700; }
+    .side-scroll{ padding:8px; overflow:auto; }
+    .nav{ display:grid; gap:6px; }
+    .nav .item{
+      display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer;
+    }
+    .nav .item:hover{ background:var(--blue-50); }
+    .nav .item.active{ background:var(--blue-100); border:1px solid var(--blue-600); }
+    .chip{
+      display:inline-flex; gap:8px; align-items:center; border:1px solid var(--border);
+      background:var(--chip); color:var(--muted); padding:6px 10px; border-radius:999px; font-size:12px; margin:4px 6px 0 0;
+    }
+    .credit{
+      margin-top:auto; padding:12px; font-size:12px; color:var(--muted); border-top:1px solid var(--border);
+    }
+    /* Chat main */
+    .main{
+      display:flex; flex-direction:column; height:calc(100vh - 64px);
+    }
+    .thread{
+      flex:1; overflow:auto; padding:24px; display:grid; gap:16px;
+      background: radial-gradient(1200px 500px at 30% -20%, var(--blue-50), transparent 60%);
+    }
+    .msg{
+      display:flex; gap:12px; align-items:flex-start;
+    }
+    .avatar{
+      width:36px; height:36px; border-radius:999px; display:grid; place-items:center; background:var(--blue-600); color:#fff; font-weight:900;
+      box-shadow: var(--shadow);
+    }
+    .bubble{
+      background:#fff; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); max-width:900px;
+    }
+    .bubble h3{ margin:0 0 6px; font-size:16px; }
+    .meta{ color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .grid{ display:grid; grid-template-columns: repeat(12,1fr); gap:12px; }
+    .card{
+      grid-column: span 6; background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow: var(--shadow);
+    }
+    .card h4{ margin:0 0 6px; }
+    .table{ border:1px solid var(--border); border-radius:10px; overflow:auto; }
+    table{ width:100%; border-collapse:collapse; font-size:14px; }
+    th,td{ padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; }
+    th{ background:#f9fbff; position:sticky; top:0; }
+    tr:hover td{ background:#f5faff; }
+    .badge{ font-size:12px; padding:4px 8px; border-radius:999px; background:#eef2ff; color:var(--blue-700); border:1px solid var(--blue-100); }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    /* Composer */
+    .composer{
+      border-top:1px solid var(--border); background:linear-gradient(180deg,#fff,#f9fbff);
+      padding:14px; position:sticky; bottom:0;
+    }
+    .composer-wrap{
+      display:flex; gap:10px; align-items:flex-end; max-width:980px; margin:0 auto;
+    }
+    .textarea{
+      flex:1; background:#fff; border:1px solid var(--border); border-radius:16px; padding:10px 12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .textarea textarea{
+      resize:none; width:100%; border:none; outline:none; font-size:15px; min-height:24px; max-height:160px; padding:6px 0;
+      font-family: inherit; color: var(--text); background:transparent;
+    }
+    .kbd{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; color:var(--muted); border:1px solid var(--border);
+      padding:2px 6px; border-radius:6px; background:#fff; }
+    .send{ background:var(--blue-600); color:white; border:none; border-radius:12px; padding:10px 14px; cursor:pointer; }
+    .send:active{ transform: translateY(1px); }
+    /* Right drawer */
+    .drawer{
+      width:0; transition: width .2s ease; border-left:1px solid var(--border); background:#fff; overflow:hidden;
+    }
+    .drawer.open{ width:360px; }
+    .drawer-head{ padding:16px; border-bottom:1px solid var(--border); font-weight:800; }
+    .drawer-body{ padding:12px; display:grid; gap:12px; }
+    .section{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; box-shadow: var(--shadow); }
+    .link{ color:var(--blue-700); text-decoration:none; }
+    /* Responsive */
+    @media (max-width: 960px){
+      .wrap{ grid-template-columns: 0 1fr 0; }
+      .sidebar{ display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="logo">D</div>DealScope <span style="color:var(--muted); font-weight:600; margin-left:6px;">research copilot</span></div>
+    <div class="search">
+      <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <input placeholder="Ask anything… e.g. “Summarize TNVA’s latest 10-Q changes”"/>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="toggleDrawer">Details ▸</button>
+      <button class="btn">New Watchlist</button>
+      <button class="btn primary">Create Brief</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-head">Workspace</div>
+      <div class="side-scroll">
+        <div class="nav">
+          <div class="item active">💬 Chat</div>
+          <div class="item">🧩 M&A Digest</div>
+          <div class="item">📄 SEC Tracker</div>
+          <div class="item">🗣️ Commentary</div>
+          <div class="item">📊 Comps</div>
+          <div class="item">🏦 Capital Structure</div>
+        </div>
+        <div style="margin:12px 0 6px; font-weight:700;">Filters</div>
+        <div>
+          <span class="chip">US Market</span>
+          <span class="chip">Tech</span>
+          <span class="chip">Last 30 days</span>
+        </div>
+      </div>
+      <div class="credit">© 2025 DealScope — draft UI</div>
+    </aside>
+
+    <!-- Chat / Main -->
+    <main class="main">
+      <div class="thread" id="thread">
+        <!-- System welcome -->
+        <div class="msg">
+          <div class="avatar">A</div>
+          <div class="bubble">
+            <div class="meta">Assistant • just now</div>
+            <h3>Welcome! What would you like to research today?</h3>
+            <div class="controls">
+              <button class="btn">Analyze filing</button>
+              <button class="btn">Scan deals</button>
+              <button class="btn">Build comps</button>
+              <button class="btn">Debt heatmap</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- User prompt -->
+        <div class="msg">
+          <div class="avatar" style="background:#0ea5e9">U</div>
+          <div class="bubble">
+            <div class="meta">You • 1 min ago</div>
+            Compare BluePort’s latest investor deck to the previous one. Flag tone and any strategy shifts.
+          </div>
+        </div>
+
+        <!-- Tool answer (Commentary Change) -->
+        <div class="msg">
+          <div class="avatar">A</div>
+          <div class="bubble">
+            <div class="meta">Commentary Change • 1 min ago</div>
+            <div class="grid">
+              <div class="card" style="grid-column: span 7;">
+                <h4>BluePort — Investor Deck Δ</h4>
+                <div class="meta">Compared Jun 2025 vs Mar 2025 decks</div>
+                <div class="table" style="margin-top:8px;">
+                  <table>
+                    <thead><tr><th>Added</th><th>Removed</th><th>Reworded</th></tr></thead>
+                    <tbody>
+                      <tr><td>“Restructuring program”, “Unit economics”</td><td>“Global expansion”</td><td>“AI roadmap” → “Edge AI pilots”</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="controls"><span class="badge">Tone: Negative</span><button class="btn">Add to brief</button></div>
+              </div>
+              <div class="card" style="grid-column: span 5;">
+                <h4>Keywords ↑ (QoQ)</h4>
+                <div class="table">
+                  <table>
+                    <thead><tr><th>Term</th><th>Change</th></tr></thead>
+                    <tbody>
+                      <tr><td>Restructuring</td><td>+35%</td></tr>
+                      <tr><td>Gross margin</td><td>+21%</td></tr>
+                      <tr><td>Edge AI</td><td>+64%</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Another prompt -->
+        <div class="msg">
+          <div class="avatar" style="background:#0ea5e9">U</div>
+          <div class="bubble">
+            <div class="meta">You • 40 sec ago</div>
+            Show recent M&A deals in AI infra with values and rationale.
+          </div>
+        </div>
+
+        <!-- M&A tool output -->
+        <div class="msg">
+          <div class="avatar">A</div>
+          <div class="bubble">
+            <div class="meta">M&A Deal Digest • 30 sec ago</div>
+            <div class="grid">
+              <div class="card">
+                <h4>TechNova → GridSense</h4>
+                <div class="meta">$1.2B • Status: Announced</div>
+                <p style="margin:6px 0 0">Rationale: AI infrastructure expansion; expected cost synergies in DC ops.</p>
+              </div>
+              <div class="card">
+                <h4>HealthCore → BioAxis</h4>
+                <div class="meta">$640M • Status: Agreed</div>
+                <p style="margin:6px 0 0">Rationale: Pipeline synergy; accelerated trials in immunology.</p>
+              </div>
+              <div class="card">
+                <h4>BluePort → Shiply</h4>
+                <div class="meta">$310M • Status: Rumor</div>
+                <p style="margin:6px 0 0">Rationale: Logistics network optimization; port throughput.</p>
+              </div>
+            </div>
+            <div class="controls" style="margin-top:8px;">
+              <button class="btn">Export CSV</button>
+              <button class="btn primary">Add all to Brief</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filing diff -->
+        <div class="msg">
+          <div class="avatar">A</div>
+          <div class="bubble">
+            <div class="meta">SEC Filing Tracker • 20 sec ago</div>
+            <div class="table">
+              <table>
+                <thead><tr><th>Ticker</th><th>Doc</th><th>New Risks</th><th>Accounting</th><th>MD&A</th></tr></thead>
+                <tbody>
+                  <tr><td>TNVA</td><td>10‑Q</td><td>AI chip supply</td><td>Revenue recognition clar.</td><td>Margin compression</td></tr>
+                  <tr><td>HLC</td><td>10‑K</td><td>1 new</td><td>Lease liabilities</td><td>R&D ramp</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="controls"><button class="btn">Set alert</button><button class="btn">Open diff</button></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Composer -->
+      <div class="composer">
+        <div class="composer-wrap">
+          <div class="textarea">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <textarea id="input" rows="1" placeholder="Type a request… e.g., “Build comps for TNVA and export to Excel”"></textarea>
+            <span class="kbd">Shift ↵</span>
+          </div>
+          <button class="send" id="sendBtn">Send</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right drawer -->
+    <aside class="drawer" id="drawer">
+      <div class="drawer-head">Details</div>
+      <div class="drawer-body">
+        <div class="section">
+          <div style="font-weight:800; margin-bottom:4px;">Selected Item</div>
+          <div class="meta">Tap rows or cards to populate details here.</div>
+        </div>
+        <div class="section">
+          <div style="font-weight:800; margin-bottom:4px;">Quick Actions</div>
+          <div class="controls">
+            <button class="btn">Create Brief</button>
+            <button class="btn">Add to Watchlist</button>
+            <button class="btn">Share</button>
+          </div>
+        </div>
+        <div class="section">
+          <div style="font-weight:800; margin-bottom:4px;">Related Links</div>
+          <ul style="margin:6px 0 0 18px; color:var(--muted)">
+            <li><a href="#" class="link">Latest filings</a></li>
+            <li><a href="#" class="link">Recent deals</a></li>
+            <li><a href="#" class="link">Watchlist settings</a></li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Auto-grow textarea
+    const ta = document.getElementById('input');
+    ta.addEventListener('input', ()=>{
+      ta.style.height='24px';
+      ta.style.height = Math.min(160, ta.scrollHeight) + 'px';
+    });
+    // Fake send
+    document.getElementById('sendBtn').addEventListener('click', ()=>{
+      const v = ta.value.trim();
+      if(!v) return;
+      const thread = document.getElementById('thread');
+      const msg = document.createElement('div');
+      msg.className = 'msg';
+      msg.innerHTML = `
+        <div class="avatar" style="background:#0ea5e9">U</div>
+        <div class="bubble"><div class="meta">You • now</div>${v}</div>`;
+      thread.appendChild(msg);
+      ta.value=''; ta.style.height='24px';
+      thread.scrollTop = thread.scrollHeight;
+    });
+    // Drawer toggle
+    const drawer = document.getElementById('drawer');
+    document.getElementById('toggleDrawer').addEventListener('click', ()=>{
+      drawer.classList.toggle('open');
+      document.querySelector('.wrap').style.gridTemplateColumns = drawer.classList.contains('open') ? '260px 1fr 360px' : '260px 1fr 0';
+    });
+    // Selectable rows/cards -> populate drawer
+    document.querySelectorAll('tr, .card').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        if(!drawer.classList.contains('open')){
+          drawer.classList.add('open');
+          document.querySelector('.wrap').style.gridTemplateColumns = '260px 1fr 360px';
+        }
+        document.querySelector('.drawer-body .section').innerHTML = `<div style="font-weight:800; margin-bottom:4px;">Selected</div><div class="meta">${el.innerText.replace(/\s+/g,' ').trim().slice(0,160)}…</div>`;
+      });
+    });
+  </script>
+</body>
+</html>
