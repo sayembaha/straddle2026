@@ -1,9 +1,5 @@
-"use client";
-
-import dynamic from "next/dynamic";
-
-const Straddle = dynamic(() => import("@/components/straddle"), { ssr: false });
+import Landing from "@/components/landing/landing";
 
 export default function Home() {
-  return <Straddle />;
+  return <Landing />;
 }
