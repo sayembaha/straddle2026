@@ -35,7 +35,7 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
       }
     }
 
-    const redirect = `${window.location.origin}/auth/callback${trimmed ? `?invite=${encodeURIComponent(trimmed)}` : ""}`;
+    const redirect = `${window.location.origin}/auth/callback?${trimmed ? `invite=${encodeURIComponent(trimmed)}` : "returning=1"}`;
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: redirect, shouldCreateUser: Boolean(trimmed) },
