@@ -175,7 +175,7 @@ export default function Landing() {
             Straddle supplies the structure, the evidence and the format, then shows you exactly where the line between the two falls.
           </p>
 
-          <div className="mb-[clamp(40px,4vw,56px)] flex flex-wrap">
+          <div className="flex flex-wrap">
             <div className="min-w-0 flex-[1_1_320px] border border-ink bg-white p-[clamp(26px,2.8vw,38px)]">
               <p className={`${mono} mb-5 text-[11px] font-medium tracking-[0.18em] text-mute`}>You bring</p>
               <ul className="m-0 flex list-none flex-col gap-[18px] p-0">
@@ -193,36 +193,6 @@ export default function Landing() {
               </ul>
             </div>
           </div>
-
-          <div className="mb-[clamp(40px,4vw,56px)] flex flex-wrap gap-px border border-line bg-line">
-            {[
-              ["Your take is required", "Nothing generates from a blank field. Straddle will not invent an opinion for you, which is the single reason most AI posts read the way they do."],
-              ["Three questions", "What surprised you. What would change your mind. What you have seen firsthand. The answers go into the draft, not into a prompt."],
-              ["Your words stay yours", "Sentences you typed are carried into the post verbatim. Straddle writes around them. It does not smooth them out."],
-              ["Provenance, in colour", "Navy is yours. Grey is Straddle. Click any grey line to replace it in your own words."],
-              ["Authorship score", "Measured, not flattered. The share of the post that is your sentences and your figures. Clear 60% and it carries the Author-led mark."],
-              ["Desk check", "Four tests before you publish: a stance, a specific number, a cited source, no stock phrases. Fail one and it names it."],
-            ].map(([t, d]) => (
-              <div key={t} className="min-w-0 flex-[1_1_290px] bg-white p-[clamp(24px,2.4vw,32px)]">
-                <h3 className="mb-2.5 text-lg font-semibold">{t}</h3>
-                <p className="m-0 text-[14.5px] text-mute">{d}</p>
-              </div>
-            ))}
-          </div>
-
-          <h3 className="mb-2 font-display text-[clamp(26px,2.8vw,34px)] font-normal leading-[1.15]">See what you are not publishing.</h3>
-          <p className="mb-7 max-w-[620px] text-[15.5px] text-mute">Optional, and quietly satisfying. Straddle shows what a generic prompt would have written on the same topic, beside what you actually wrote.</p>
-          <div className="flex flex-wrap gap-[clamp(16px,2vw,24px)]">
-            <div className="min-w-0 flex-[1_1_320px] border border-dashed border-line2 p-[clamp(22px,2.4vw,30px)]">
-              <p className={`${mono} mb-3.5 text-[11px] font-medium tracking-[0.18em] text-mute`}>Generic prompt</p>
-              <p className="m-0 text-[15.5px] leading-[1.6] text-[#6E7E92]">In today&rsquo;s fast-paced macro landscape, investors must navigate an increasingly complex rate environment. It&rsquo;s not just about inflation, it&rsquo;s about positioning. Here are three key takeaways every professional should consider.</p>
-            </div>
-            <div className="min-w-0 flex-[1_1_320px] border border-ink bg-white p-[clamp(22px,2.4vw,30px)]">
-              <p className={`${mono} mb-3.5 text-[11px] font-medium tracking-[0.18em] text-mute`}>Your draft</p>
-              <p className="m-0 text-[15.5px] leading-[1.6]">The market is underpricing how long the Fed stays on hold. I sat in three credit committees this quarter that priced in faster cuts. The inflation line stopped falling.</p>
-            </div>
-          </div>
-          <p className="mt-[clamp(32px,3vw,44px)] max-w-[680px] text-[15.5px] text-mute">Every phrase you rewrite is remembered as a rule. The longer you use Straddle, the less of it there is in what you publish.</p>
         </div>
       </section>
 
