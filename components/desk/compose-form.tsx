@@ -2,6 +2,13 @@
 
 import { useRef, useState } from "react";
 
+type Analysis = {
+  stance: string;
+  claims: { text: string; kind: string }[];
+  phrases: string[];
+  figures: string[];
+};
+
 const CHANNELS = ["LinkedIn", "X thread", "Substack", "Beehiiv"] as const;
 type Channel = (typeof CHANNELS)[number];
 
@@ -31,7 +38,9 @@ export default function ComposeForm() {
   const [source, setSource] = useState("");
   const [chart, setChart] = useState("");
   const [fileName, setFileName] = useState("");
-  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [exampleAt, setExampleAt] = useState(0);
   const takeRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,10 +59,26 @@ export default function ComposeForm() {
     takeRef.current?.focus();
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!ready) return;
-    setNote("Your take is ready. Drafting is connected in the next build step, so nothing was generated.");
+    if (!ready || busy) return;
+    setBusy(true);
+    setError("");
+    setAnalysis(null);
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ take, channels, maxWords: limit }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { analysis?: Analysis; error?: string };
+      if (!res.ok || !data.analysis) setError(data.error ?? "Something went wrong. Try again.");
+      else setAnalysis(data.analysis);
+    } catch {
+      setError("Could not reach Straddle. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -186,10 +211,10 @@ export default function ComposeForm() {
       <div className="flex flex-col gap-3">
         <button
           type="submit"
-          disabled={!ready}
+          disabled={!ready || busy}
           className="min-h-[52px] w-fit border border-brand bg-brand px-8 text-base font-medium text-white hover:border-ink hover:bg-ink disabled:cursor-not-allowed disabled:border-line2 disabled:bg-wash disabled:text-faint"
         >
-          Draft it
+          {busy ? "Reading your take\u2026" : "Draft it"}
         </button>
         {!ready && (
           <p className="m-0 text-[13px] text-mute">
@@ -197,9 +222,51 @@ export default function ComposeForm() {
           </p>
         )}
         <p role="status" className="m-0 min-h-[1.5em] text-[14px] text-mute">
-          {note}
+          {error}
         </p>
       </div>
+
+      {analysis && (
+        <section aria-label="What Straddle read" className="flex flex-col gap-5 border border-line2 bg-white p-5">
+          <div>
+            <p className="m-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Your position</p>
+            <p className="m-0 mt-1.5 text-[17px] leading-[1.5] text-ink">{analysis.stance}</p>
+          </div>
+          {analysis.claims.length > 0 && (
+            <div>
+              <p className="m-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">What you are claiming</p>
+              <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0">
+                {analysis.claims.map((c) => (
+                  <li key={c.text} className="flex items-baseline gap-2.5 text-[15px] text-ink">
+                    <span className="w-[62px] shrink-0 font-mono text-[10.5px] uppercase tracking-[0.1em] text-faint">{c.kind}</span>
+                    {c.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div>
+            <p className="m-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Your words, kept as written</p>
+            {analysis.phrases.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {analysis.phrases.map((p) => (
+                  <span key={p} className="border border-ink bg-ink px-3 py-1.5 text-[14px] text-white">
+                    {p}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="m-0 mt-1.5 text-[14px] text-mute">Nothing stood out as distinctive yet. Sharper wording gives Straddle more to protect.</p>
+            )}
+          </div>
+          {analysis.figures.length > 0 && (
+            <p className="m-0 text-[13.5px] text-mute">
+              Figures taken from your text: <span className="font-mono text-ink">{analysis.figures.join("  ·  ")}</span>
+            </p>
+          )}
+          <p className="m-0 border-t border-line pt-3 text-[13px] text-mute">The draft itself comes in the next build step.</p>
+        </section>
+      )}
     </form>
   );
 }
