@@ -5,13 +5,6 @@ import { useRef, useState } from "react";
 const CHANNELS = ["LinkedIn", "X thread", "Substack", "Beehiiv"] as const;
 type Channel = (typeof CHANNELS)[number];
 
-const LENGTHS = [
-  { id: "short", label: "Short", words: 120 },
-  { id: "standard", label: "Standard", words: 250 },
-  { id: "long", label: "Long", words: 400 },
-] as const;
-type LengthId = (typeof LENGTHS)[number]["id"];
-
 const EXAMPLES = [
   "The Fed cut in September for the labour market, not inflation. Payroll revisions matter more than the next CPI print.",
   "Nvidia's problem is supply, not demand. Until Blackwell ships at volume the guide is a capacity number dressed as a forecast.",
@@ -32,7 +25,7 @@ function addOn(open: boolean) {
 export default function ComposeForm() {
   const [take, setTake] = useState("");
   const [channels, setChannels] = useState<Channel[]>(["LinkedIn"]);
-  const [length, setLength] = useState<LengthId>("standard");
+  const [maxWords, setMaxWords] = useState("");
   const [showSource, setShowSource] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [source, setSource] = useState("");
@@ -43,7 +36,9 @@ export default function ComposeForm() {
   const takeRef = useRef<HTMLTextAreaElement>(null);
 
   const words = take.trim() ? take.trim().split(/\s+/).length : 0;
-  const ready = words > 0 && channels.length > 0;
+  const limit = maxWords ? Number(maxWords) : null;
+  const limitBad = limit !== null && (limit < 20 || limit > 2000);
+  const ready = words > 0 && channels.length > 0 && !limitBad;
 
   function toggle(c: Channel) {
     setChannels((cur) => (cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c]));
@@ -160,23 +155,31 @@ export default function ComposeForm() {
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <label htmlFor="length" className="w-[96px] shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">
             Length
           </label>
-          <select
-            id="length"
-            name="length"
-            value={length}
-            onChange={(e) => setLength(e.target.value as LengthId)}
-            className="min-h-[38px] border border-line2 bg-white px-2.5 text-[13.5px] text-ink focus:border-ink focus:outline-none"
-          >
-            {LENGTHS.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.label} &middot; ~{l.words} words
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 text-[13.5px] text-ink">
+            <span>Max</span>
+            <input
+              id="length"
+              name="maxWords"
+              type="number"
+              inputMode="numeric"
+              min={20}
+              max={2000}
+              step={10}
+              value={maxWords}
+              onChange={(e) => setMaxWords(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="250"
+              aria-describedby="length-hint"
+              className="min-h-[38px] w-[84px] border border-line2 bg-white px-2.5 text-center font-mono text-[14px] text-ink placeholder:text-faint focus:border-ink focus:outline-none"
+            />
+            <span>words</span>
+          </div>
+          <span id="length-hint" className="text-[12.5px] text-faint">
+            Leave blank and Straddle picks a length that suits each channel.
+          </span>
         </div>
       </div>
 
@@ -188,7 +191,11 @@ export default function ComposeForm() {
         >
           Draft it
         </button>
-        {!ready && <p className="m-0 text-[13px] text-mute">Write your take and pick at least one channel.</p>}
+        {!ready && (
+          <p className="m-0 text-[13px] text-mute">
+            {limitBad ? "Pick a word limit between 20 and 2,000, or leave it blank." : "Write your take and pick at least one channel."}
+          </p>
+        )}
         <p role="status" className="m-0 min-h-[1.5em] text-[14px] text-mute">
           {note}
         </p>
