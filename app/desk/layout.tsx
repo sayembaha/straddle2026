@@ -15,6 +15,7 @@ export default async function DeskLayout({ children }: { children: React.ReactNo
     : { data: null };
   const month = new Date().toISOString().slice(0, 7);
   const left = profile ? 30 - (profile.draft_month === month ? profile.drafts_used : 0) : null;
+  const low = left !== null && left <= 5;
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-line">
@@ -28,7 +29,17 @@ export default async function DeskLayout({ children }: { children: React.ReactNo
             <Link href="/desk/library" className={link}>Library</Link>
           </nav>
           <div className="ml-auto flex items-center gap-4 text-[13px] text-mute">
-            {left !== null && <span className="font-mono text-[11px] uppercase tracking-[0.14em]">{left} drafts left</span>}
+            {left !== null && (
+              <span
+                title={`${left} of 30 drafts left this month`}
+                className={`inline-flex items-baseline gap-1.5 border px-3 py-1.5 ${low ? "border-ink bg-ink text-white" : "border-sky bg-wash text-ink"}`}
+              >
+                <span className="font-mono text-[15px] font-semibold leading-none">{left}</span>
+                <span className={`font-mono text-[10.5px] uppercase leading-none tracking-[0.14em] ${low ? "text-white" : "text-mute"}`}>
+                  drafts left
+                </span>
+              </span>
+            )}
             {auth.user && (
               <form action="/auth/signout" method="post">
                 <button type="submit" className="min-h-[44px] px-1 text-[13px] text-mute hover:text-ink">Sign out</button>
