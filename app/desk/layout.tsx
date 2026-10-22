@@ -1,12 +1,20 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Your desk — Straddle" };
 
 const link = "inline-flex min-h-[44px] items-center px-1 text-[14.5px] text-mute no-underline hover:text-ink";
 
 // The signed-in app frame: header with the two places a writer goes, Compose and Library.
-// Sign-in is added on plan day 3; until then this area is open for preview only.
-export default function DeskLayout({ children }: { children: React.ReactNode }) {
+// Signed-in only: the middleware sends visitors without a session to /login.
+export default async function DeskLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const { data: profile } = auth.user
+    ? await supabase.from("profiles").select("drafts_used, draft_month").eq("id", auth.user.id).maybeSingle()
+    : { data: null };
+  const month = new Date().toISOString().slice(0, 7);
+  const left = profile ? 30 - (profile.draft_month === month ? profile.drafts_used : 0) : null;
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-line">
@@ -19,7 +27,14 @@ export default function DeskLayout({ children }: { children: React.ReactNode }) 
             <Link href="/desk" className={link}>Compose</Link>
             <Link href="/desk/library" className={link}>Library</Link>
           </nav>
-          <span className="ml-auto font-mono text-[11px] uppercase tracking-[0.14em] text-mute">Preview build</span>
+          <div className="ml-auto flex items-center gap-4 text-[13px] text-mute">
+            {left !== null && <span className="font-mono text-[11px] uppercase tracking-[0.14em]">{left} drafts left</span>}
+            {auth.user && (
+              <form action="/auth/signout" method="post">
+                <button type="submit" className="min-h-[44px] px-1 text-[13px] text-mute hover:text-ink">Sign out</button>
+              </form>
+            )}
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-[1180px] px-5 py-[clamp(28px,4vw,56px)] sm:px-8">{children}</main>
