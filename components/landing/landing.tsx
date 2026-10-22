@@ -68,33 +68,37 @@ export default function Landing() {
               <p className={`${mono} m-0 text-[11px] font-medium tracking-[0.18em] text-mute`}>Your desk</p>
               <div>
                 <p className="mb-2 text-[13.5px] font-semibold">Your take <span className="font-normal text-mute">&mdash; required</span></p>
-                <div className="border border-ink p-3.5 text-[15px] leading-[1.5]">The market is underpricing how long the Fed stays on hold.</div>
-                <p className="mt-2 text-[12.5px] text-mute">Straddle never invents your opinion. It can&rsquo;t run without this.</p>
-              </div>
-              <div>
-                <p className="mb-2 text-[13.5px] font-semibold">React to a source <span className="font-normal text-mute">&mdash; optional</span></p>
-                <div className="break-all border border-line2 p-3.5 font-mono text-[12.5px]">federalreserve.gov/newsevents/pressreleases/monetary20261029a.htm</div>
-                <p className="mt-2 text-[12.5px] text-mute">Paste a release, filing or article. Straddle reads it and cites it in your post.</p>
-              </div>
-              <div>
-                <p className="mb-2 text-[13.5px] font-semibold">Chart <span className="font-normal text-mute">&mdash; optional</span></p>
-                <div className="border border-line2 p-3.5 text-[15px]">US CPI vs Fed funds rate, 2020 to now</div>
-                <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-2">
-                  <span className="inline-flex items-center gap-[7px] border border-line2 px-3 py-2 text-[13px]">
-                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 11V3M8 3L5 6M8 3l3 3M3 12.5h10" fill="none" stroke="#0B1F3A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    Upload CSV or Excel
-                  </span>
-                  <span className="text-[13px] text-mute">or paste your own table</span>
+                <div className="border border-ink bg-white">
+                  <div className="p-3.5 text-[15px] leading-[1.5]">The market is underpricing how long the Fed stays on hold.</div>
+                  <div className="flex flex-wrap items-center gap-2 border-t border-line bg-wash px-3 py-2.5">
+                    <span className="inline-flex items-center gap-1.5 border border-ink bg-white px-3 py-1.5 text-[13px]"><span className="font-mono">&minus;</span>Source link</span>
+                    <span className="inline-flex items-center gap-1.5 border border-ink bg-white px-3 py-1.5 text-[13px]"><span className="font-mono">&minus;</span>Chart</span>
+                    <span className="ml-auto font-mono text-[11px] uppercase tracking-[0.12em] text-faint">11 words</span>
+                  </div>
+                  <div className="break-all border-t border-line p-3.5 font-mono text-[12.5px]">federalreserve.gov/newsevents/pressreleases/monetary20261029a.htm</div>
+                  <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 border-t border-line p-3.5 text-[14px]">
+                    <span>US CPI vs Fed funds rate, 2020 to now</span>
+                    <span className="inline-flex items-center gap-[7px] border border-line2 px-3 py-1.5 text-[13px]">
+                      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 11V3M8 3L5 6M8 3l3 3M3 12.5h10" fill="none" stroke="#0B1F3A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      Upload CSV or Excel
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-2.5 text-[12.5px] text-mute">Ask in plain English and Straddle pulls the series. Bring your own numbers and it charts those instead. Or skip the chart and post text only.</p>
+                <p className="mt-2 text-[12.5px] text-mute">Straddle never invents your opinion. The source and the chart are optional.</p>
               </div>
-              <div>
-                <p className="mb-2.5 text-[13.5px] font-semibold">Publish to</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-ink px-[15px] py-[9px] text-[13.5px] text-white">LinkedIn</span>
+              <div className="flex flex-col gap-3 border-y border-line py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="w-[88px] shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Publish to</span>
+                  <span className="bg-ink px-3.5 py-2 text-[13.5px] text-white">LinkedIn</span>
                   {["X thread", "Substack", "Beehiiv"].map((c) => (
-                    <span key={c} className="border border-line2 px-[15px] py-[9px] text-[13.5px] text-mute">{c}</span>
+                    <span key={c} className="border border-line2 px-3.5 py-2 text-[13.5px] text-mute">{c}</span>
                   ))}
+                </div>
+                <div className="flex items-center gap-2 text-[13.5px]">
+                  <span className="w-[88px] shrink-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Length</span>
+                  <span>Max</span>
+                  <span className="inline-block min-w-[64px] border border-line2 px-2.5 py-1.5 text-center font-mono text-[14px]">200</span>
+                  <span>words</span>
                 </div>
               </div>
               <span className="inline-flex min-h-[48px] w-fit items-center bg-brand px-6 text-[15.5px] font-medium text-white">Draft it</span>
