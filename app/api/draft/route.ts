@@ -31,17 +31,21 @@ export async function POST(request: NextRequest) {
     claims: (Array.isArray(a.claims) ? a.claims : []).slice(0, 6).map((c) => ({ text: String(c?.text ?? "").slice(0, 300), kind: c?.kind ?? "opinion" })),
     phrases: (Array.isArray(a.phrases) ? a.phrases : []).map((p) => (typeof p === "string" ? locateVerbatim(p, take) : null)).filter((p): p is string => !!p).slice(0, 8),
     figures: [],
+    gaps: [],
   };
 
   let draft: Draft | null = null;
   try {
     let missing: string[] = [];
+    let slop: string[] = [];
+    const cost = (d: Draft) => d.missing.length * 3 + d.slop.length + (d.overLimit ? 2 : 0);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const raw = await complete({ model: MODEL, system: draftSystem(maxWords), user: draftUser(take, analysis, missing), maxTokens: 1600 });
+      const raw = await complete({ model: MODEL, system: draftSystem(maxWords), user: draftUser(take, analysis, missing, slop), maxTokens: 1600 });
       const parsed = parseDraft(raw, take, analysis, maxWords);
-      if (parsed && (!draft || parsed.missing.length < draft.missing.length)) draft = parsed;
-      if (draft && draft.missing.length === 0 && !draft.overLimit) break;
+      if (parsed && (!draft || cost(parsed) < cost(draft))) draft = parsed;
+      if (draft && cost(draft) === 0) break;
       missing = draft?.missing ?? [];
+      slop = (draft?.slop ?? []).map((h) => h.match);
     }
   } catch (e) {
     console.error("draft failed", e);
