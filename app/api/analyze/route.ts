@@ -37,10 +37,12 @@ export async function POST(request: NextRequest) {
   if (!analysis) return NextResponse.json({ error: "Straddle could not read your take just now. Try again." }, { status: 502 });
 
   // Keep every generation (your words verbatim) so the prompt can be tuned later. Never blocks the response.
-  const { error: saveError } = await supabase
+  const { data: saved, error: saveError } = await supabase
     .from("drafts")
-    .insert({ user_id: auth.user.id, take, channels, max_words: maxWords, analysis });
+    .insert({ user_id: auth.user.id, take, channels, max_words: maxWords, analysis })
+    .select("id")
+    .single();
   if (saveError) console.error("save failed", saveError.message);
 
-  return NextResponse.json({ analysis });
+  return NextResponse.json({ analysis, draftId: saved?.id ?? null });
 }
