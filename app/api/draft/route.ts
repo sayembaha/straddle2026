@@ -37,12 +37,15 @@ export async function POST(request: NextRequest) {
   let draft: Draft | null = null;
   try {
     let missing: string[] = [];
+    let slop: string[] = [];
+    const cost = (d: Draft) => d.missing.length * 3 + d.slop.length + (d.overLimit ? 2 : 0);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const raw = await complete({ model: MODEL, system: draftSystem(maxWords), user: draftUser(take, analysis, missing), maxTokens: 1600 });
+      const raw = await complete({ model: MODEL, system: draftSystem(maxWords), user: draftUser(take, analysis, missing, slop), maxTokens: 1600 });
       const parsed = parseDraft(raw, take, analysis, maxWords);
-      if (parsed && (!draft || parsed.missing.length < draft.missing.length)) draft = parsed;
-      if (draft && draft.missing.length === 0 && !draft.overLimit) break;
+      if (parsed && (!draft || cost(parsed) < cost(draft))) draft = parsed;
+      if (draft && cost(draft) === 0) break;
       missing = draft?.missing ?? [];
+      slop = (draft?.slop ?? []).map((h) => h.match);
     }
   } catch (e) {
     console.error("draft failed", e);

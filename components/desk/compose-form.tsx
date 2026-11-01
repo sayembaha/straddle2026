@@ -18,6 +18,7 @@ type Draft = {
   missing: string[];
   newFigures: string[];
   overLimit: boolean;
+  slop?: { rule: string; match: string }[];
 };
 
 const CHANNELS = ["LinkedIn", "X thread", "Substack", "Beehiiv"] as const;
@@ -286,11 +287,14 @@ export default function ComposeForm() {
               </span>
             ))}
           </p>
-          {(draft.missing.length > 0 || draft.newFigures.length > 0 || draft.overLimit) && (
+          {(draft.missing.length > 0 || draft.newFigures.length > 0 || draft.overLimit || (draft.slop?.length ?? 0) > 0) && (
             <ul className="m-0 flex list-none flex-col gap-1 border-t border-line p-0 pt-3 text-[13px] text-mute">
               {draft.missing.length > 0 && <li>Left out of the draft: {draft.missing.map((m) => `\u201c${m}\u201d`).join(", ")}</li>}
               {draft.newFigures.length > 0 && <li>Numbers that are not in your take: {draft.newFigures.join(", ")}. Check them before you post.</li>}
               {draft.overLimit && <li>Longer than your {limit}-word limit.</li>}
+              {draft.slop && draft.slop.length > 0 && (
+                <li>Wording that reads as AI-written: {draft.slop.map((h) => `\u201c${h.match}\u201d`).join(", ")}. Rewrite these in your own words.</li>
+              )}
             </ul>
           )}
           <div className="flex items-center gap-3">
