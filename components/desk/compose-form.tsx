@@ -8,6 +8,7 @@ type Analysis = {
   claims: { text: string; kind: string }[];
   phrases: string[];
   figures: string[];
+  gaps?: string[];
 };
 
 type Draft = {
@@ -334,6 +335,16 @@ export default function ComposeForm() {
               <p className="m-0 mt-1.5 text-[14px] text-mute">Nothing stood out as distinctive yet. Sharper wording gives Straddle more to protect.</p>
             )}
           </div>
+          {analysis.gaps && analysis.gaps.length > 0 && (
+            <div>
+              <p className="m-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Where your take needs support</p>
+              <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0 text-[15px] text-ink">
+                {analysis.gaps.map((g) => (
+                  <li key={g}>{g}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {analysis.figures.length > 0 && (
             <p className="m-0 text-[13.5px] text-mute">
               Figures taken from your text: <span className="font-mono text-ink">{analysis.figures.join("  ·  ")}</span>

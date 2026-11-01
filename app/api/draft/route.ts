@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     claims: (Array.isArray(a.claims) ? a.claims : []).slice(0, 6).map((c) => ({ text: String(c?.text ?? "").slice(0, 300), kind: c?.kind ?? "opinion" })),
     phrases: (Array.isArray(a.phrases) ? a.phrases : []).map((p) => (typeof p === "string" ? locateVerbatim(p, take) : null)).filter((p): p is string => !!p).slice(0, 8),
     figures: [],
+    gaps: [],
   };
 
   let draft: Draft | null = null;
