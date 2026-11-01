@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 type Analysis = {
@@ -7,6 +8,15 @@ type Analysis = {
   claims: { text: string; kind: string }[];
   phrases: string[];
   figures: string[];
+};
+
+type Draft = {
+  segments: { text: string; source: "yours" | "straddle" }[];
+  text: string;
+  words: number;
+  missing: string[];
+  newFigures: string[];
+  overLimit: boolean;
 };
 
 const CHANNELS = ["LinkedIn", "X thread", "Substack", "Beehiiv"] as const;
@@ -38,7 +48,10 @@ export default function ComposeForm() {
   const [source, setSource] = useState("");
   const [chart, setChart] = useState("");
   const [fileName, setFileName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const [stage, setStage] = useState<"idle" | "reading" | "writing">("idle");
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [exampleAt, setExampleAt] = useState(0);
@@ -47,6 +60,7 @@ export default function ComposeForm() {
   const words = take.trim() ? take.trim().split(/\s+/).length : 0;
   const limit = maxWords ? Number(maxWords) : null;
   const limitBad = limit !== null && (limit < 20 || limit > 2000);
+  const busy = stage !== "idle";
   const ready = words > 0 && channels.length > 0 && !limitBad;
 
   function toggle(c: Channel) {
@@ -62,22 +76,50 @@ export default function ComposeForm() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!ready || busy) return;
-    setBusy(true);
+    setStage("reading");
     setError("");
     setAnalysis(null);
+    setDraft(null);
+    setCopied(false);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ take, channels, maxWords: limit }),
       });
-      const data = (await res.json().catch(() => ({}))) as { analysis?: Analysis; error?: string };
-      if (!res.ok || !data.analysis) setError(data.error ?? "Something went wrong. Try again.");
-      else setAnalysis(data.analysis);
+      const data = (await res.json().catch(() => ({}))) as { analysis?: Analysis; draftId?: string | null; error?: string };
+      if (!res.ok || !data.analysis) {
+        setError(data.error ?? "Something went wrong. Try again.");
+        return;
+      }
+      setAnalysis(data.analysis);
+
+      setStage("writing");
+      const res2 = await fetch("/api/draft", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ take, maxWords: limit, analysis: data.analysis, draftId: data.draftId ?? null }),
+      });
+      const out = (await res2.json().catch(() => ({}))) as { draft?: Draft; error?: string };
+      if (!res2.ok || !out.draft) setError(out.error ?? "Something went wrong. Try again.");
+      else {
+        setDraft(out.draft);
+        router.refresh(); // updates the drafts-left badge
+      }
     } catch {
       setError("Could not reach Straddle. Check your connection and try again.");
     } finally {
-      setBusy(false);
+      setStage("idle");
+    }
+  }
+
+  async function copy() {
+    if (!draft) return;
+    try {
+      await navigator.clipboard.writeText(draft.text);
+      setCopied(true);
+    } catch {
+      setError("Copy was blocked. Select the text and copy it by hand.");
     }
   }
 
@@ -214,7 +256,7 @@ export default function ComposeForm() {
           disabled={!ready || busy}
           className="min-h-[52px] w-fit border border-brand bg-brand px-8 text-base font-medium text-white hover:border-ink hover:bg-ink disabled:cursor-not-allowed disabled:border-line2 disabled:bg-wash disabled:text-faint"
         >
-          {busy ? "Reading your take\u2026" : "Draft it"}
+          {stage === "reading" ? "Reading your take\u2026" : stage === "writing" ? "Writing\u2026" : "Draft it"}
         </button>
         {!ready && (
           <p className="m-0 text-[13px] text-mute">
@@ -225,6 +267,39 @@ export default function ComposeForm() {
           {error}
         </p>
       </div>
+
+      {draft && (
+        <section aria-label="Your draft" className="flex flex-col gap-4 border border-ink bg-white p-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="m-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">LinkedIn draft</p>
+            <p className="m-0 flex items-center gap-4 text-[12.5px] text-mute">
+              <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 bg-ink" />Your words</span>
+              <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 bg-ai" />Straddle</span>
+            </p>
+            <span className="ml-auto font-mono text-[11.5px] uppercase tracking-[0.12em] text-faint">{draft.words} words</span>
+          </div>
+          <p className="m-0 whitespace-pre-wrap text-[16.5px] leading-[1.65]">
+            {draft.segments.map((seg, i) => (
+              <span key={i} className={seg.source === "yours" ? "font-medium text-ink" : "text-ai"}>
+                {seg.text}
+              </span>
+            ))}
+          </p>
+          {(draft.missing.length > 0 || draft.newFigures.length > 0 || draft.overLimit) && (
+            <ul className="m-0 flex list-none flex-col gap-1 border-t border-line p-0 pt-3 text-[13px] text-mute">
+              {draft.missing.length > 0 && <li>Left out of the draft: {draft.missing.map((m) => `\u201c${m}\u201d`).join(", ")}</li>}
+              {draft.newFigures.length > 0 && <li>Numbers that are not in your take: {draft.newFigures.join(", ")}. Check them before you post.</li>}
+              {draft.overLimit && <li>Longer than your {limit}-word limit.</li>}
+            </ul>
+          )}
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={copy} className="min-h-[44px] border border-ink bg-white px-5 text-[14px] text-ink hover:bg-ink hover:text-white">
+              {copied ? "Copied" : "Copy draft"}
+            </button>
+            <p className="m-0 text-[13px] text-mute">Editing and posting come next.</p>
+          </div>
+        </section>
+      )}
 
       {analysis && (
         <section aria-label="What Straddle read" className="flex flex-col gap-5 border border-line2 bg-white p-5">
@@ -264,7 +339,6 @@ export default function ComposeForm() {
               Figures taken from your text: <span className="font-mono text-ink">{analysis.figures.join("  ·  ")}</span>
             </p>
           )}
-          <p className="m-0 border-t border-line pt-3 text-[13px] text-mute">The draft itself comes in the next build step.</p>
         </section>
       )}
     </form>
