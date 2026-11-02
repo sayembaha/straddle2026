@@ -27,10 +27,11 @@ export async function POST(request: NextRequest) {
 
   let analysis;
   try {
-    const raw = await complete({ model: MODEL, system: ANALYSIS_SYSTEM, user: `<take>\n${take}\n</take>`, maxTokens: 900 });
+    const raw = await complete({ model: MODEL, system: ANALYSIS_SYSTEM, user: `<take>\n${take}\n</take>`, maxTokens: 1500 });
     analysis = parseAnalysis(raw, take);
+    if (!analysis) console.error("analyze unparseable", raw.slice(0, 600));
   } catch (e) {
-    console.error("analyze failed", e);
+    console.error("analyze failed", e instanceof AiError ? `${e.code}: ${e.message}` : e);
     const msg = e instanceof AiError && e.code === "no_key" ? "Drafting is not switched on yet." : "Straddle could not read your take just now. Try again.";
     return NextResponse.json({ error: msg }, { status: e instanceof AiError && e.code === "no_key" ? 503 : 502 });
   }
