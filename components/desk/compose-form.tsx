@@ -19,6 +19,9 @@ type Draft = {
   newFigures: string[];
   overLimit: boolean;
   slop?: { rule: string; match: string }[];
+  checks?: string[];
+  facts?: { title: string; asOf: string; line: string }[];
+  objection?: string;
 };
 
 const CHANNELS = ["LinkedIn", "X thread", "Substack", "Beehiiv"] as const;
@@ -299,6 +302,20 @@ export default function ComposeForm() {
                 <li>Wording that reads as AI-written: {draft.slop.map((h) => `\u201c${h.match}\u201d`).join(", ")}. Rewrite these in your own words.</li>
               )}
             </ul>
+          )}
+          {((draft.checks?.length ?? 0) > 0 || (draft.facts?.length ?? 0) > 0 || draft.objection) && (
+            <div className="flex flex-col gap-3 border-t border-line pt-4 text-[14px] leading-[1.55]">
+              <p className="m-0 font-mono text-[11px] uppercase tracking-[0.16em] text-mute">What Straddle checked</p>
+              {draft.checks?.map((c, i) => (
+                <p key={i} className="m-0 text-ink"><span className="mr-2 inline-block h-2 w-2 bg-sky-ink align-middle" />{c}</p>
+              ))}
+              {draft.facts?.map((f, i) => (
+                <p key={i} className="m-0 text-mute"><span className="font-medium text-ink">{f.title}, {f.asOf}.</span> {f.line.replace(/^\[[A-Z0-9]+\]\s[^.]*\.\s?/, "")}</p>
+              ))}
+              {draft.objection && (
+                <p className="m-0 text-mute"><span className="font-medium text-ink">A sceptical reader may ask:</span> {draft.objection}</p>
+              )}
+            </div>
           )}
           <div className="flex items-center gap-3">
             <button type="button" onClick={copy} className="min-h-[44px] border border-ink bg-white px-5 text-[14px] text-ink hover:bg-ink hover:text-white">
