@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { AiError, complete } from "@/lib/anthropic";
 import { cleanSeries, locateVerbatim, type Analysis } from "@/lib/analysis";
+import { mathChecks } from "@/lib/checks";
 import { getFacts } from "@/lib/fred";
 import { draftSystem, draftUser, parseDraft, type Draft } from "@/lib/draft";
 
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
     figures: [],
     gaps: [],
     series: cleanSeries(a.series),
+    objection: typeof a.objection === "string" ? a.objection.slice(0, 240) : "",
   };
   const facts = await getFacts(analysis.series);
 
@@ -56,6 +58,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: off ? "Drafting is not switched on yet." : "Straddle could not write the draft just now. Try again." }, { status: off ? 503 : 502 });
   }
   if (!draft) return NextResponse.json({ error: "Straddle could not write the draft just now. Try again." }, { status: 502 });
+  draft.checks = mathChecks(take, facts);
+  draft.facts = facts.map((f) => ({ title: f.title, asOf: f.asOf, line: f.line }));
+  draft.objection = analysis.objection;
 
   // Count the draft only once there is one to show.
   const { data: left, error: useError } = await supabase.rpc("use_draft");

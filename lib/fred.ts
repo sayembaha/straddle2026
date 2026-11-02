@@ -26,6 +26,7 @@ export type Fact = {
   id: string;
   title: string;
   asOf: string; // e.g. "Sep 2026"
+  latest: number;
   line: string; // what the model is given
   numbers: number[]; // every figure quoted in `line`, for checking the draft
   years: number[];
@@ -81,7 +82,7 @@ export function computeFact(def: SeriesDef, obs: Obs[]): Fact | null {
   parts.push(`Five-year high: ${fmt(hi.value)} (${fmtDate(hi.date, def.freq)}). Five-year low: ${fmt(lo.value)} (${fmtDate(lo.date, def.freq)}).`);
   parts.push(`The latest reading is above ${rank}% of readings in the last five years.`);
   const years = Array.from(new Set([last, prior, hi, lo].filter((o): o is Obs => !!o).map((o) => Number(o.date.slice(0, 4)))));
-  return { id: def.id, title: def.title, asOf: fmtDate(last.date, def.freq), line: parts.join(" "), numbers, years };
+  return { id: def.id, title: def.title, asOf: fmtDate(last.date, def.freq), latest: last.value, line: parts.join(" "), numbers, years };
 }
 
 export async function getFacts(ids: string[]): Promise<Fact[]> {
