@@ -23,9 +23,9 @@ export function draftSystem(maxWords: number | null): string {
 Rules:
 1. Facts: use only the writer's stance, claims and figures. Never add a fact, number, date, name, source or forecast that is not in the take. Missing evidence is the writer's to supply, not yours.
 2. Put every phrase in <keep> into the post exactly as written, character for character.
-3. Edit like a sharp editor, not a typist. The take is a first draft, so do not hand it back reformatted. Rewrite sentences that are repetitive, clunky, vague or ungrammatical. Merge sentences that make the same point twice. Keep a sentence word for word only when it is already the strongest way to say it: the sentence that carries the main claim and anything in <keep>. Aim for roughly half the post to be the writer's own unchanged words and the rest your tightening, bridging and framing.
-4. Add reasoning, not evidence. Make the logic between the writer's claims explicit: what causes what, what follows, what would change the view. Use only what the take asserts and plain logic. Open with one line that states the position as a sharp claim, not a summary. Close on the implication or what to watch.
-5. Format: short paragraphs of one to three sentences. No question hook, no "Here's why", no hashtags, no emojis, no stock phrases such as "in today's fast-paced world", "game-changer", "let's dive in" or "it's important to note". Fix grammar and tense in anything you rewrite without changing the writer's meaning.
+3. Be an editor with a light hand. The take is the writer's voice, and your job is to make it clearer, not to write more. Fix clunky or ungrammatical sentences and cut repeats. Add at most three sentences of your own, each doing one job: a plain opening claim, a link the take's own logic needs, or a close. Do not explain basic finance the reader already knows. Do not restate what the writer already said. Keep every sentence that already works exactly as written.
+4. Never speak for the writer. Do not use "I", "my", "we" or "our" unless the take does. Never state what the writer is watching, believes, expects or plans unless the take says so. Open with one line that states the position plainly. Close on the implication, not on a send-off.
+5. Format: follow the take's own paragraphing and match its rhythm: sentence length, contractions, punctuation and formality. Avoid tidy rhetorical shapes such as set-up then twist ("X. This time it has not."), "one of two ways", and "A and B is an odd pair". A plain statement is better. No question hook, no "Here's why", no hashtags, no emojis, no stock phrases such as "in today's fast-paced world", "game-changer", "let's dive in" or "it's important to note". Fix grammar and tense in anything you rewrite without changing the writer's meaning.
 6. ${length} If the take is short, write a short post. Do not pad.
 
 Voice. Write like a person with an opinion, not like an assistant.
@@ -120,6 +120,13 @@ export function parseDraft(raw: string, take: string, a: Analysis, maxWords: num
   const known = new Set(findFigures(take).map((f) => f.replace(/\s/g, "").toLowerCase()));
   const newFigures = findFigures(full).filter((f) => !known.has(f.replace(/\s/g, "").toLowerCase()));
   const words = full.split(/\s+/).filter(Boolean).length;
-  const slop = scanSlop(segs.filter((x) => x.source === "straddle").map((x) => x.text).join(" "));
+  const own = segs.filter((x) => x.source === "straddle").map((x) => x.text).join(" ");
+  const slop = scanSlop(own);
+  if (!/\b(i|i'm|i am|i've|my|me|we|our)\b/i.test(take)) {
+    for (const m of Array.from(own.matchAll(/\b(i|i'm|i am|i've|my|me|we|our)\b[^.?!]{0,40}/gi))) {
+      slop.push({ rule: "Speaks as you", match: m[0].trim() });
+      break;
+    }
+  }
   return { segments: segs, text: full, words, missing, newFigures, overLimit: maxWords !== null && words > maxWords, slop };
 }
