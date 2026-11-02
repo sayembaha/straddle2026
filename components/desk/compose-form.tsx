@@ -12,7 +12,7 @@ type Analysis = {
 };
 
 type Draft = {
-  segments: { text: string; source: "yours" | "straddle" }[];
+  segments: { text: string; source: "yours" | "straddle" | "data" }[];
   text: string;
   words: number;
   missing: string[];
@@ -277,12 +277,15 @@ export default function ComposeForm() {
             <p className="m-0 flex items-center gap-4 text-[12.5px] text-mute">
               <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 bg-ink" />Your words</span>
               <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 bg-ai" />Straddle</span>
+              {draft.segments.some((s) => s.source === "data") && (
+                <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 bg-sky-ink" />Verified data</span>
+              )}
             </p>
             <span className="ml-auto font-mono text-[11.5px] uppercase tracking-[0.12em] text-faint">{draft.words} words</span>
           </div>
           <p className="m-0 whitespace-pre-wrap text-[16.5px] leading-[1.65]">
             {draft.segments.map((seg, i) => (
-              <span key={i} className={seg.source === "yours" ? "font-medium text-ink" : "text-ai"}>
+              <span key={i} className={seg.source === "yours" ? "font-medium text-ink" : seg.source === "data" ? "text-sky-ink" : "text-ai"}>
                 {seg.text}
               </span>
             ))}
@@ -290,7 +293,7 @@ export default function ComposeForm() {
           {(draft.missing.length > 0 || draft.newFigures.length > 0 || draft.overLimit || (draft.slop?.length ?? 0) > 0) && (
             <ul className="m-0 flex list-none flex-col gap-1 border-t border-line p-0 pt-3 text-[13px] text-mute">
               {draft.missing.length > 0 && <li>Left out of the draft: {draft.missing.map((m) => `\u201c${m}\u201d`).join(", ")}</li>}
-              {draft.newFigures.length > 0 && <li>Numbers that are not in your take: {draft.newFigures.join(", ")}. Check them before you post.</li>}
+              {draft.newFigures.length > 0 && <li>Numbers that are in neither your take nor the data: {draft.newFigures.join(", ")}. Check them before you post.</li>}
               {draft.overLimit && <li>Longer than your {limit}-word limit.</li>}
               {draft.slop && draft.slop.length > 0 && (
                 <li>Wording that reads as AI-written: {draft.slop.map((h) => `\u201c${h.match}\u201d`).join(", ")}. Rewrite these in your own words.</li>
