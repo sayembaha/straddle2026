@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import OutlineCard, { type Plan } from "./outline-card";
 
 type Analysis = {
   stance: string;
@@ -54,7 +55,8 @@ export default function ComposeForm() {
   const [chart, setChart] = useState("");
   const [fileName, setFileName] = useState("");
   const router = useRouter();
-  const [stage, setStage] = useState<"idle" | "reading" | "writing">("idle");
+  const [stage, setStage] = useState<"idle" | "reading" | "writing" | "researching" | "planning">("idle");
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +68,7 @@ export default function ComposeForm() {
   const limit = maxWords ? Number(maxWords) : null;
   const limitBad = limit !== null && (limit < 20 || limit > 2000);
   const busy = stage !== "idle";
+  const longForm = limit !== null && limit >= 500;
   const ready = words > 0 && channels.length > 0 && !limitBad;
 
   function toggle(c: Channel) {
@@ -85,6 +88,7 @@ export default function ComposeForm() {
     setError("");
     setAnalysis(null);
     setDraft(null);
+    setPlan(null);
     setCopied(false);
     try {
       const res = await fetch("/api/analyze", {
@@ -98,6 +102,31 @@ export default function ComposeForm() {
         return;
       }
       setAnalysis(data.analysis);
+
+      if (longForm) {
+        setStage("researching");
+        const r = await fetch("/api/research", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ take, analysis: data.analysis }),
+        });
+        const found = (await r.json().catch(() => ({}))) as { data?: Plan["data"]; web?: Plan["web"]; webFailed?: boolean; error?: string };
+        if (!r.ok) { setError(found.error ?? "Something went wrong. Try again."); return; }
+        setStage("planning");
+        const facts = [
+          ...(found.data ?? []).map((d) => ({ id: d.id, line: d.line })),
+          ...(found.web ?? []).map((w) => ({ id: w.id, line: `${w.against ? "AGAINST: " : ""}${w.claim} (${w.title})` })),
+        ];
+        const o = await fetch("/api/outline", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ take, targetWords: limit, stance: data.analysis.stance, claims: data.analysis.claims.map((c) => c.text), facts }),
+        });
+        const planned = (await o.json().catch(() => ({}))) as { outline?: Plan["outline"]; error?: string };
+        if (!o.ok || !planned.outline) { setError(planned.error ?? "Something went wrong. Try again."); return; }
+        setPlan({ outline: planned.outline, web: found.web ?? [], data: found.data ?? [], webFailed: !!found.webFailed });
+        return;
+      }
 
       setStage("writing");
       const res2 = await fetch("/api/draft", {
@@ -261,7 +290,7 @@ export default function ComposeForm() {
           disabled={!ready || busy}
           className="min-h-[52px] w-fit border border-brand bg-brand px-8 text-base font-medium text-white hover:border-ink hover:bg-ink disabled:cursor-not-allowed disabled:border-line2 disabled:bg-wash disabled:text-faint"
         >
-          {stage === "reading" ? "Reading your take\u2026" : stage === "writing" ? "Writing\u2026" : "Draft it"}
+          {stage === "reading" ? "Reading your take\u2026" : stage === "researching" ? "Researching\u2026" : stage === "planning" ? "Planning\u2026" : stage === "writing" ? "Writing\u2026" : longForm ? "Research and outline" : "Draft it"}
         </button>
         {!ready && (
           <p className="m-0 text-[13px] text-mute">
@@ -272,6 +301,8 @@ export default function ComposeForm() {
           {error}
         </p>
       </div>
+
+      {plan && <OutlineCard plan={plan} onChange={setPlan} />}
 
       {draft && (
         <section aria-label="Your draft" className="flex flex-col gap-4 border border-ink bg-white p-5">
