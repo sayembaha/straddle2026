@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { AiError, complete } from "@/lib/anthropic";
-import { locateVerbatim, type Analysis } from "@/lib/analysis";
+import { cleanSeries, locateVerbatim, type Analysis } from "@/lib/analysis";
+import { getFacts } from "@/lib/fred";
 import { draftSystem, draftUser, parseDraft, type Draft } from "@/lib/draft";
 
 export const maxDuration = 60;
@@ -32,7 +33,9 @@ export async function POST(request: NextRequest) {
     phrases: (Array.isArray(a.phrases) ? a.phrases : []).map((p) => (typeof p === "string" ? locateVerbatim(p, take) : null)).filter((p): p is string => !!p).slice(0, 8),
     figures: [],
     gaps: [],
+    series: cleanSeries(a.series),
   };
+  const facts = await getFacts(analysis.series);
 
   let draft: Draft | null = null;
   try {
@@ -40,8 +43,8 @@ export async function POST(request: NextRequest) {
     let slop: string[] = [];
     const cost = (d: Draft) => d.missing.length * 3 + d.slop.length + (d.overLimit ? 2 : 0);
     for (let attempt = 0; attempt < 2; attempt++) {
-      const raw = await complete({ model: MODEL, system: draftSystem(maxWords), user: draftUser(take, analysis, missing, slop), maxTokens: 1600 });
-      const parsed = parseDraft(raw, take, analysis, maxWords);
+      const raw = await complete({ model: MODEL, system: draftSystem(maxWords), user: draftUser(take, analysis, facts, missing, slop), maxTokens: 1600 });
+      const parsed = parseDraft(raw, take, analysis, maxWords, facts);
       if (parsed && (!draft || cost(parsed) < cost(draft))) draft = parsed;
       if (draft && cost(draft) === 0) break;
       missing = draft?.missing ?? [];
